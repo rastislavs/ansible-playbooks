@@ -70,5 +70,5 @@
   with_items: "{{ apache_vhosts }}"
 
 - name: create a mysql database user for each apache vhost
-  mysql_user: name={{ item | replace('.', '_') | truncate(16, True, '') }} password="{{ lookup('password', '/root/mysqlpassword-' + item) }}" priv={{ item | replace('.', '_') }}.*:ALL host=localhost state=present
+  mysql_user: name={{ item | replace('.', '_') | truncate(16, True, '') }} password="{{ lookup('password', './.mysqlpasswd-' + item) }}" priv={{ item | replace('.', '_') }}.*:ALL host=localhost state=present
   with_items: "{{ apache_vhosts }}"

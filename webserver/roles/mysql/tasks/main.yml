@@ -9,7 +9,9 @@
   apt: name=phpmyadmin state=installed
 
 - name: copy phpMyAdmin config for apache
-  file: src=/etc/phpmyadmin/apache.conf dest=/etc/apache2/conf-available/phpmyadmin.conf
+  command: cp -n /etc/phpmyadmin/apache.conf /etc/apache2/conf-available/phpmyadmin.conf
+  args:
+    creates: /etc/apache2/conf-available/phpmyadmin.conf
 
 - name: enable phpMyAdmin config in apache
   command: a2enconf phpmyadmin
