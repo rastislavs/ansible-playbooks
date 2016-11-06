@@ -28,5 +28,6 @@
     - tomcat8
     - nginx
     - mysql
+    - { role: letsencrypt, when: https }
     - vhosts
 
