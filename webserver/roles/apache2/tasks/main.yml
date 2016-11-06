@@ -1,0 +1,38 @@
+---
+- name: install apache2
+  apt: name=apache2 state=present
+
+- name: apache2 listen on port {{ apache_port }}
+  lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen " line="Listen {{ apache_port }}" state=present
+  notify:
+    - restart apache2
+
+- name: default virtualhost on port {{ apache_port }}
+  lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirtualHost \*:" line="<VirtualHost *:{{ apache_port }}>"
+  notify:
+    - restart apache2
+
+- name: disable directory listing globally
+  replace: dest=/etc/apache2/apache2.conf regexp="^(\s*)Options(.*) Indexes(.*)" replace="\1Options\2\3"
+  notify:
+    - restart apache2
+
+- name: remove default virtualhost contents
+  file:
+    path=/var/www/html/index.html
+    state=absent
+
+- name: enable mod_rewrite
+  apache2_module: name=rewrite state=present
+  notify:
+    - restart apache2
+
+- name: install mod_php5
+  apt: name=libapache2-mod-php5 state=present
+  notify:
+    - restart apache2
+
+- name: install php-mysql
+  apt: name=php5-mysql state=present
+  notify:
+    - restart apache2

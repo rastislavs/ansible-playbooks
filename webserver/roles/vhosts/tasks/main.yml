@@ -1,0 +1,74 @@
+---
+- name: create web root directories for all vhosts
+  file:
+    path=/var/www/{{ item }}
+    state=directory
+    owner=www-data
+    group=www-data
+    mode=0755
+  with_flattened: 
+    - "{{ nginx_vhosts }}"
+    - "{{ apache_vhosts }}"
+    - "{{ tomcat_vhosts }}" 
+
+- name: create default index page for nginx/tomcat vhosts
+  template: src=index.html dest=/var/www/{{ item }}/index.html
+  with_flattened: 
+    - "{{ nginx_vhosts }}"
+    - "{{ tomcat_vhosts }}"
+
+- name: create default index page for apache vhosts
+  template: src=index.php dest=/var/www/{{ item }}/index.php
+  with_items:
+    - "{{ apache_vhosts }}"
+
+- name: create apache vhost files
+  template: src=apache-vhost.conf dest=/etc/apache2/sites-available/{{ item }}.conf
+  with_items: "{{ apache_vhosts }}"
+  notify:
+    - restart apache2
+
+- name: enable apache vhosts
+  command: a2ensite {{ item }}
+  args:
+    creates: /etc/apache2/sites-enabled/{{ item }}.conf
+  with_items: "{{ apache_vhosts }}"
+  notify:
+    - restart apache2
+
+- name: create nginx vhost files for nginx vhosts
+  template: src=nginx-vhost.conf dest=/etc/nginx/sites-available/{{ item }}
+  with_items: "{{ nginx_vhosts }}"
+  notify:
+    - restart nginx
+
+- name: create nginx vhost files for apache vhosts
+  template: src=nginx-apache-vhost.conf dest=/etc/nginx/sites-available/{{ item }}
+  with_items: "{{ apache_vhosts }}"
+  notify:
+    - restart nginx
+
+- name: create nginx vhost files for tomcat vhosts
+  template: src=nginx-tomcat-vhost.conf dest=/etc/nginx/sites-available/{{ item }}
+  with_items: "{{ tomcat_vhosts }}"
+  notify:
+    - restart nginx
+
+- name: enable all nginx vhosts
+  file: src=/etc/nginx/sites-available/{{ item }}
+        dest=/etc/nginx/sites-enabled/{{ item }}
+        state=link
+  with_flattened:
+    - "{{ nginx_vhosts }}"
+    - "{{ apache_vhosts }}"
+    - "{{ tomcat_vhosts }}"
+  notify:
+    - restart nginx
+
+- name: create a new mysql database for each apache vhost
+  mysql_db: name={{ item | replace('.', '_') }} state=present collation=utf8_general_ci
+  with_items: "{{ apache_vhosts }}"
+
+- name: create a mysql database user for each apache vhost
+  mysql_user: name={{ item | replace('.', '_') | truncate(16, True, '') }} password="{{ lookup('password', '/root/mysqlpassword-' + item) }}" priv={{ item | replace('.', '_') }}.*:ALL host=localhost state=present
+  with_items: "{{ apache_vhosts }}"

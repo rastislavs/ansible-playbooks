@@ -1,0 +1,8 @@
+---
+- name: install tomcat8
+  apt: name=tomcat8 state=present
+
+- name: remove default virtualhost contents
+  file:
+    path=/var/lib/tomcat8/webapps/ROOT/index.html
+    state=absent

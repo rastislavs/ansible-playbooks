@@ -1,0 +1,39 @@
+---
+- name: install mysql
+  apt: name=mysql-server state=installed
+
+- name: install the mysql module for Python
+  apt: name=python-mysqldb state=installed
+
+- name: install phpMyAdmin
+  apt: name=phpmyadmin state=installed
+
+- name: copy phpMyAdmin config for apache
+  file: src=/etc/phpmyadmin/apache.conf dest=/etc/apache2/conf-available/phpmyadmin.conf
+
+- name: enable phpMyAdmin config in apache
+  command: a2enconf phpmyadmin
+  args:
+    creates: /etc/apache2/conf-enabled/phpmyadmin.conf
+  notify:
+    - restart apache2
+
+- name: update mysql root password for all root accounts
+  mysql_user: name=root host={{ item }} password={{ mysql_root_password }}
+  with_items:
+    - "{{ ansible_hostname }}"
+    - 127.0.0.1
+    - ::1
+    - localhost
+
+- name: copy .my.cnf file with root password credentials to root's home
+  template: src=my.cnf dest=/root/.my.cnf owner=root mode=0600
+
+- name: delete anonymous mysql server user for {{ ansible_hostname }}
+  action: mysql_user user="" host="{{ ansible_hostname }}" state="absent"
+
+- name: delete anonymous mysql server user for localhost
+  action: mysql_user user="" state="absent"
+
+- name: remove the mysql test database
+  action: mysql_db db=test state=absent

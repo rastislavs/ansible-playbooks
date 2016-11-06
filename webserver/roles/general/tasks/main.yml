@@ -1,0 +1,9 @@
+---
+- name: update apt cache
+  apt: update_cache=yes 
+
+- name: install packages
+  apt: name={{ item }} state=latest
+  with_items:
+    - vim
+    - git

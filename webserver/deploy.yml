@@ -1,0 +1,30 @@
+---
+- hosts: all
+
+  become: yes
+  become_method: sudo
+
+  vars:
+    nginx_http_port: 80
+    nginx_https_port: 443
+    apache_port: 8081
+    tomcat_port: 8080
+
+    nginx_vhosts:
+      - "vhost1.example.com"
+
+    apache_vhosts:
+      - "vhost2.example.com"
+      - "vhost3.example.com"
+
+    tomcat_vhosts:
+      - "vhost4.example.com"
+    
+  roles:
+    - general
+    - apache2
+    - tomcat8
+    - nginx
+    - mysql
+    - vhosts
+
